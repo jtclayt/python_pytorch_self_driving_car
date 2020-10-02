@@ -1,0 +1,30 @@
+astroid==2.3.3
+certifi==2020.6.20
+cffi @ file:///tmp/build/80754af9/cffi_1600699165083/work
+cycler==0.10.0
+docutils==0.14
+entrypoints==0.3
+flake8==3.7.9
+isort==4.3.21
+Kivy==1.10.1
+kiwisolver==1.2.0
+lazy-object-proxy==1.4.3
+matplotlib==3.3.2
+mccabe==0.6.1
+mkl-fft==1.2.0
+mkl-random==1.1.1
+mkl-service==2.3.0
+numpy @ file:///tmp/build/80754af9/numpy_and_numpy_base_1596233737064/work
+olefile==0.46
+Pillow==7.2.0
+pycodestyle==2.5.0
+pycparser @ file:///tmp/build/80754af9/pycparser_1594388511720/work
+pyflakes==2.1.1
+Pygments==2.3.1
+pylint==2.4.4
+pyparsing==2.4.7
+python-dateutil==2.8.1
+six==1.14.0
+torch==0.4.1.post2
+typed-ast==1.4.1
+wrapt==1.11.2

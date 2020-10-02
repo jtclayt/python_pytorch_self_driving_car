@@ -16,8 +16,12 @@ NUM_HL_NEURONS = 30
 MEMORY_CAPACITY = 100000
 # Learning rate for optimizer
 LEARNING_RATE = 0.001
+# Length of reward window
+REWARD_WINDOW_CAPACITY = 1000
 # Temperature parameter for softmax function
 TEMPERATURE = 7
+# Sample batch size for neural network learning
+SAMPLE_BATCH_SIZE = 100
 
 
 class Network(Module):
@@ -82,7 +86,8 @@ class Dqn:
             replay memory
         '''
         self.gamma = gamma
-        # sliding window of the mean of last 100 rewards evolving over time
+        # Sliding window of the mean of last REWARD_WINDOW_CAPACITY number of
+        # rewards evolving over time
         self.reward_window = []
         self.model = Network(input_size, num_actions)
         self.memory = ReplayMemory(MEMORY_CAPACITY)
@@ -142,3 +147,22 @@ class Dqn:
             # tensor of simple float reward
             Tensor([self.last_reward])
         ))
+        action = self.select_action(new_state)
+
+        if len(self.memory.memory) > SAMPLE_BATCH_SIZE:
+            batch_state, *rem = self.memor.sample(SAMPLE_BATCH_SIZE)
+            batch_next_state, batch_reward, batch_action = rem
+            self.learn(
+                batch_state,
+                batch_next_state,
+                batch_reward,
+                batch_action
+            )
+
+        # Update variables with new information
+        self.last_action = action
+        self.last_state = new_state
+        self.last_reward = reward
+        self.reward_window.append(reward)
+        if len(self.reward_window) > REWARD_WINDOW_CAPACITY:
+            del self.reward_window[0]
