@@ -1,17 +1,18 @@
 # Self Driving Car
 # Importing the libraries
 import numpy as np
-from random import random, randint
+# from random import random, randint
 import matplotlib.pyplot as plt
-import time
+# import time
 
 # Importing the Kivy packages
 from kivy.app import App
 from kivy.uix.widget import Widget
 from kivy.uix.button import Button
-from kivy.graphics import Color, Ellipse, Line
+from kivy.graphics import Color, Line
 from kivy.config import Config
-from kivy.properties import NumericProperty, ReferenceListProperty, ObjectProperty
+from kivy.properties import NumericProperty, ReferenceListProperty
+from kivy.properties import ObjectProperty
 from kivy.vector import Vector
 from kivy.clock import Clock
 
@@ -80,14 +81,44 @@ class Car(Widget):
         self.sensor1 = Vector(30, 0).rotate(self.angle) + self.pos
         self.sensor2 = Vector(30, 0).rotate((self.angle+30) % 360) + self.pos
         self.sensor3 = Vector(30, 0).rotate((self.angle-30) % 360) + self.pos
-        self.signal1 = int(np.sum(sand[int(self.sensor1_x)-10:int(self.sensor1_x)+10, int(self.sensor1_y)-10:int(self.sensor1_y)+10]))/400.
-        self.signal2 = int(np.sum(sand[int(self.sensor2_x)-10:int(self.sensor2_x)+10, int(self.sensor2_y)-10:int(self.sensor2_y)+10]))/400.
-        self.signal3 = int(np.sum(sand[int(self.sensor3_x)-10:int(self.sensor3_x)+10, int(self.sensor3_y)-10:int(self.sensor3_y)+10]))/400.
-        if self.sensor1_x > longueur-10 or self.sensor1_x < 10 or self.sensor1_y > largeur-10 or self.sensor1_y < 10:
+        self.signal1 = int(
+            np.sum(sand[
+                int(self.sensor1_x)-10:int(self.sensor1_x)+10,
+                int(self.sensor1_y)-10:int(self.sensor1_y)+10
+            ])
+        ) / 400.
+        self.signal2 = int(
+            np.sum(sand[
+                int(self.sensor2_x)-10:int(self.sensor2_x)+10,
+                int(self.sensor2_y)-10:int(self.sensor2_y)+10
+            ])
+        ) / 400.
+        self.signal3 = int(
+            np.sum(sand[
+                int(self.sensor3_x)-10:int(self.sensor3_x)+10,
+                int(self.sensor3_y)-10:int(self.sensor3_y)+10
+            ])
+        ) / 400.
+        if (
+            self.sensor1_x > longueur - 10
+            or self.sensor1_x < 10
+            or self.sensor1_y > largeur - 10
+            or self.sensor1_y < 10
+        ):
             self.signal1 = 1.
-        if self.sensor2_x > longueur-10 or self.sensor2_x < 10 or self.sensor2_y > largeur-10 or self.sensor2_y < 10:
+        if (
+            self.sensor2_x > longueur-10
+            or self.sensor2_x < 10
+            or self.sensor2_y > largeur-10
+            or self.sensor2_y < 10
+        ):
             self.signal2 = 1.
-        if self.sensor3_x > longueur-10 or self.sensor3_x < 10 or self.sensor3_y > largeur-10 or self.sensor3_y < 10:
+        if (
+            self.sensor3_x > longueur-10
+            or self.sensor3_x < 10
+            or self.sensor3_y > largeur-10
+            or self.sensor3_y < 10
+        ):
             self.signal3 = 1.
 
 
@@ -133,7 +164,13 @@ class Game(Widget):
         xx = goal_x - self.car.x
         yy = goal_y - self.car.y
         orientation = Vector(*self.car.velocity).angle((xx, yy))/180.
-        last_signal = [self.car.signal1, self.car.signal2, self.car.signal3, orientation, -orientation]
+        last_signal = [
+            self.car.signal1,
+            self.car.signal2,
+            self.car.signal3,
+            orientation,
+            -orientation
+        ]
         action = brain.update(last_reward, last_signal)
         scores.append(brain.score())
         rotation = action2rotation[action]
@@ -143,7 +180,7 @@ class Game(Widget):
         self.ball2.pos = self.car.sensor2
         self.ball3.pos = self.car.sensor3
 
-        if sand[int(self.car.x),int(self.car.y)] > 0:
+        if sand[int(self.car.x), int(self.car.y)] > 0:
             self.car.velocity = Vector(1, 0).rotate(self.car.angle)
             last_reward = -1
         else:
@@ -177,7 +214,7 @@ class MyPaintWidget(Widget):
         global length, n_points, last_x, last_y
         with self.canvas:
             Color(0.8, 0.7, 0)
-            d = 10.
+            # d = 10.
             touch.ud['line'] = Line(points=(touch.x, touch.y), width=10)
             last_x = int(touch.x)
             last_y = int(touch.y)
@@ -195,7 +232,10 @@ class MyPaintWidget(Widget):
             n_points += 1.
             density = n_points/(length)
             touch.ud['line'].width = int(20 * density + 1)
-            sand[int(touch.x) - 10: int(touch.x) + 10, int(touch.y) - 10: int(touch.y) + 10] = 1
+            sand[
+                int(touch.x) - 10: int(touch.x) + 10,
+                int(touch.y) - 10: int(touch.y) + 10
+            ] = 1
             last_x = x
             last_y = y
 
