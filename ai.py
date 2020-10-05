@@ -1,13 +1,12 @@
-import numpy as np
+# import numpy as np
 import random
 import os
-from torch import cat, Tensor, LongTensor
+from torch import cat, save, load, Tensor, LongTensor
 from torch.nn import Module, Linear
 from torch.nn.functional import relu, softmax, smooth_l1_loss
 from torch.optim import Adam
-import torch.autograd as autograd
+# import torch.autograd as autograd
 from torch.autograd import Variable
-from queue import Queue
 
 # Can change these to affect various parameters of the dqn
 # Number of hidden layer neurons
@@ -15,13 +14,13 @@ NUM_HL_NEURONS = 30
 # Max number of events being held in memory
 MEMORY_CAPACITY = 100000
 # Learning rate for optimizer
-LEARNING_RATE = 0.001
+LEARNING_RATE = 0.005
 # Length of reward window
 REWARD_WINDOW_CAPACITY = 1000
 # Temperature parameter for softmax function
-TEMPERATURE = 7
+TEMPERATURE = 100
 # Sample batch size for neural network learning
-SAMPLE_BATCH_SIZE = 100
+SAMPLE_BATCH_SIZE = 1000
 
 
 class Network(Module):
@@ -51,7 +50,7 @@ class ReplayMemory(object):
 
     def __init__(self, capacity):
         '''Constructor for replay memory'''
-        self.memory = Queue(capacity)
+        self.memory = []
 
     def push(self, event):
         ''' Method for adding an event to memory, keeps memory stack under
@@ -62,12 +61,14 @@ class ReplayMemory(object):
                 at - action just played
                 rt - reward for action
         '''
-        if self.memory.full():
-            self.memory.get()
-        self.memory.put(event)
+        self.memory.append(event)
+        if len(self.memory) > MEMORY_CAPACITY:
+            del self.memory[0]
 
     def sample(self, batch_size):
-        '''Method for sampling a specific number of events'''
+        ''' Method for sampling a specific number of events
+            Returns list of pytorch variables of state
+        '''
         # zip(*list) turns list like [(1,2,3), (4,5,6)]
         # to [(1,4), (2,5), (3,6)]
         # need to do this for use with pytorch to get tensor and gradient
@@ -103,12 +104,14 @@ class Dqn:
         self.last_reward = 0
 
     def select_action(self, state):
-        '''Method for car to make an action at each given time'''
+        ''' Method for car to make an action at each given time
+            Returns the action index
+        '''
         probabilities = softmax(
             # Turn state tensor into a variable without gradient
             self.model(Variable(state, volatile=True))*TEMPERATURE
         )
-        action = probabilities.multinomial()
+        action = probabilities.multinomial(3)
         # Action to take stored at index 0, 0
         return action.data[0, 0]
 
@@ -129,12 +132,14 @@ class Dqn:
         # zero grad reinitializes optimizer at each step of gradient descent
         self.optimizer.zero_grad()
         # backpropagation of error in network
-        td_loss.backward(retain_variables=True)
+        td_loss.backward()
         # updates the weights in the network
         self.optimizer.step()
 
     def update(self, reward, new_signal):
-        '''Method for updating the reward and state to get next action'''
+        ''' Method for updating the reward and state to get next action
+            Returns action played
+        '''
         # convert signal list into a torch tensor with float elements and add
         # fake batch dimension
         new_state = Tensor(new_signal).float().unsqueeze(0)
@@ -150,8 +155,8 @@ class Dqn:
         action = self.select_action(new_state)
 
         if len(self.memory.memory) > SAMPLE_BATCH_SIZE:
-            batch_state, *rem = self.memor.sample(SAMPLE_BATCH_SIZE)
-            batch_next_state, batch_reward, batch_action = rem
+            batch_state, *rem = self.memory.sample(SAMPLE_BATCH_SIZE)
+            batch_next_state, batch_action, batch_reward = rem
             self.learn(
                 batch_state,
                 batch_next_state,
@@ -166,3 +171,31 @@ class Dqn:
         self.reward_window.append(reward)
         if len(self.reward_window) > REWARD_WINDOW_CAPACITY:
             del self.reward_window[0]
+
+        return action
+
+    def score(self):
+        '''Return mean of rewards over reward window'''
+        if len(self.reward_window) == 0:
+            return 0
+        return sum(self.reward_window) / len(self.reward_window)
+
+    def save(self):
+        ''' Save the current model and optimizer to a file called
+            last_brain.pth
+        '''
+        save({
+            'model': self.model.state_dict(),
+            'optimizer': self.optimizer.state_dict()
+        }, 'last_brain.pth')
+
+    def load(self):
+        ''' Load saved model and optimizer from file'''
+        if os.path.isfile('last_brain.pth'):
+            print("=> loading checkpoint... ")
+            checkpoint = load('last_brain.pth')
+            self.model.load_state_dict(checkpoint['model'])
+            self.optimizer.load_state_dict(checkpoint['optimizer'])
+            print("done !")
+        else:
+            print("no checkpoint found...")
